@@ -473,22 +473,26 @@
             if (result.success) {
                 state.allPages = result.data;
 
-                // Verificar que los backups guardados en sessionStorage aún existan
+                // Buscar backups existentes y actualizar el caché
+                // Un backup es una página cuyo título empieza con "[BACKUP"
                 const savedBackups = JSON.parse(sessionStorage.getItem('wp_backup_ids') || '{}');
-                const existingPageIds = result.data.map(p => p.id);
-                let hasChanges = false;
+                const backupPages = result.data.filter(p => p.title && p.title.startsWith('[BACKUP'));
 
-                for (const [pageId, backupId] of Object.entries(savedBackups)) {
-                    // Si el backupId no está en la lista de páginas existentes, eliminarlo
-                    if (!existingPageIds.includes(parseInt(backupId))) {
-                        delete savedBackups[pageId];
-                        hasChanges = true;
+                // Para cada backup encontrado, extraer el título original y mapearlo
+                backupPages.forEach(backupPage => {
+                    // El título del backup es: "[BACKUP fecha] Título Original"
+                    const match = backupPage.title.match(/\[BACKUP[^\]]*\]\s*(.+)/);
+                    if (match) {
+                        const originalTitle = match[1].trim();
+                        // Buscar la página original por título
+                        const originalPage = result.data.find(p => p.title === originalTitle);
+                        if (originalPage) {
+                            savedBackups[originalPage.id] = backupPage.id;
+                        }
                     }
-                }
+                });
 
-                if (hasChanges) {
-                    sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
-                }
+                sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
 
                 renderPagesGrid(result.data);
                 $('#pages-count').textContent = `${result.data.length} ${state.currentFilter === 'pages' ? 'páginas' : 'posts'} encontrados`;
@@ -594,22 +598,13 @@
 
             // Verificar si ya existe un backup guardado para esta página
             const savedBackups = JSON.parse(sessionStorage.getItem('wp_backup_ids') || '{}');
-            const savedBackupId = savedBackups[page.id] || null;
 
-            // Verificar si el backup guardado aún existe (podría haberse borrado manualmente)
-            // Solo confiamos en el backup si la página actual tiene [BACKUP] en el título
-            // o si el título de la página original indica que se hizo backup
-            if (savedBackupId && page.title && !page.title.includes('[BACKUP]')) {
-                // Limpiar backupId si la página actual no es un backup
-                // (el backup podría haberse borrado desde WordPress)
-                delete savedBackups[page.id];
-                sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
-                state.backupId = null;
-            } else if (page.title && page.title.includes('[BACKUP]')) {
-                // Si la página actual es un backup, considerarla como segura
+            // Si la página actual es un backup (tiene [BACKUP] en título), marcar como segura
+            if (page.title && page.title.includes('[BACKUP]')) {
                 state.backupId = 'existing-backup';
             } else {
-                state.backupId = savedBackupId;
+                // Usar el backup guardado en sessionStorage
+                state.backupId = savedBackups[page.id] || null;
             }
 
             // Parser
