@@ -1,0 +1,39 @@
+# WP Template Editor - Archivos a ignorar en Git
+
+# Variables de entorno (contienen tokens y credenciales)
+.env
+.env.local
+.env.*.local
+
+# Credenciales de proyectos
+/projects/*.json
+!projects/aranguau.json.example
+
+# Logs
+*.log
+logs/
+
+# Dependencias (si las hubiera)
+node_modules/
+vendor/
+
+# IDE y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Backups locales
+*.bak
+*.backup
+checkpoints/
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp

@@ -1,0 +1,3 @@
+pass aplicacion 
+usuario:admin_test
+App_pass:xQuG3xk6VaAw436jHJaXCr1E

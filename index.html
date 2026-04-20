@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WP Template Editor — Edición Inteligente de Plantillas</title>
+    <meta name="description" content="Herramienta local para editar webs WordPress cambiando textos e imágenes sin tocar el editor visual.">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>">
+</head>
+<body>
+    <div class="app" id="app">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar__brand">
+                <div class="topbar__logo">W</div>
+                <div>
+                    <div class="topbar__title">WP Template Editor</div>
+                    <div class="topbar__subtitle">Edición Inteligente de Plantillas</div>
+                </div>
+            </div>
+            <div class="topbar__status" id="connection-status">
+                <span class="topbar__dot" id="status-dot"></span>
+                <span id="status-text">Sin conexión</span>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main">
+            <!-- ============================================================
+                 SCREEN 1: CONEXIÓN
+                 ============================================================ -->
+            <div class="screen active" id="screen-connect">
+                <div class="connect-card">
+                    <div class="connect-card__icon">🔌</div>
+                    <h2 class="connect-card__title">Conectar con WordPress</h2>
+                    <p class="connect-card__desc">Introduce los datos de acceso de la web que quieres editar</p>
+                    
+                    <form id="connect-form" autocomplete="off">
+                        <div class="form-group">
+                            <label for="wp-url">URL del WordPress</label>
+                            <input type="url" id="wp-url" placeholder="https://miweb.com" required>
+                            <p class="hint">La URL principal del sitio (sin /wp-admin)</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="wp-user">Usuario</label>
+                            <input type="text" id="wp-user" placeholder="admin" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="wp-app-password">Application Password</label>
+                            <input type="password" id="wp-app-password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" required>
+                            <p class="hint">Se genera en Usuarios → Perfil → Contraseñas de aplicación</p>
+                        </div>
+                        <button type="submit" class="btn btn--primary btn--block btn--lg" id="btn-connect">
+                            <span>Conectar</span>
+                        </button>
+                    </form>
+                    
+                    <div id="connect-error" style="display:none; margin-top: 16px; padding: 12px; background: var(--danger-soft); border-radius: var(--radius-sm); color: var(--danger); font-size: 13px; border: 1px solid rgba(239,68,68,0.2);"></div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 SCREEN 2: LISTA DE PÁGINAS
+                 ============================================================ -->
+            <div class="screen" id="screen-pages">
+                <div class="pages-header">
+                    <div>
+                        <h1 class="pages-header__title" id="site-name-title">Páginas</h1>
+                        <p class="pages-header__count" id="pages-count"></p>
+                    </div>
+                    <div class="pages-header__actions">
+                        <div class="filter-tabs">
+                            <button class="filter-tab active" data-filter="pages">Páginas</button>
+                            <button class="filter-tab" data-filter="posts">Posts</button>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="search-pages" placeholder="Buscar página...">
+                        </div>
+                        <button class="btn btn--secondary" id="btn-refresh">↻ Refrescar</button>
+                        <button class="btn btn--ghost" id="btn-disconnect">Desconectar</button>
+                    </div>
+                </div>
+                <div class="pages-grid" id="pages-grid">
+                    <!-- Se rellena dinámicamente -->
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 SCREEN 3: EDITOR
+                 ============================================================ -->
+            <div class="screen" id="screen-editor">
+                <!-- Editor Toolbar (nombre de página prominente + acciones) -->
+                <div class="editor-toolbar">
+                    <div class="editor-toolbar__left">
+                        <button class="btn btn--ghost btn--icon" id="btn-back-to-pages" title="Volver al listado">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        </button>
+                        <div class="editor-toolbar__info">
+                            <h2 class="editor-toolbar__page-name" id="editor-page-title">—</h2>
+                            <div class="editor-toolbar__meta">
+                                <span class="page-card__builder" id="editor-builder-badge">—</span>
+                                <span class="editor-toolbar__url" id="editor-page-url"></span>
+                                <button class="btn btn--icon btn--sm" id="btn-edit-slug" title="Editar enlace (slug)" style="padding: 2px 6px; background: transparent; color: var(--primary);"><span style="font-size:12px">✏️</span></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="editor-toolbar__actions">
+                        <button class="btn btn--secondary btn--sm" id="btn-create-backup" title="Crear copia de seguridad de esta página">
+                            🛡️ Crear Backup
+                        </button>
+                        <button class="btn btn--secondary btn--sm" id="btn-ai-toggle" title="Configurar la IA para reescribir textos">
+                            🤖 Configurar IA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Backup warning / status banner -->
+                <div id="backup-banner" class="backup-banner backup-banner--warning">
+                    <span>⚠️</span>
+                    <span id="backup-banner-text">No se ha creado backup de esta página. Se recomienda duplicar la página antes de editarla.</span>
+                    <button class="btn btn--sm btn--backup-action" id="btn-banner-backup">🛡️ Duplicar página ahora</button>
+                </div>
+
+                <!-- AI Settings Panel (colapsable) -->
+                <div id="ai-panel" class="ai-panel" style="display:none;">
+                    <div class="ai-panel__header">
+                        <h3>🤖 Configuración de IA</h3>
+                        <p class="ai-panel__desc">Selecciona tu proveedor de IA y añade tu API Key para reescribir textos con SEO optimizado</p>
+                    </div>
+                    <div class="ai-panel__body">
+                        <div class="ai-panel__field">
+                            <label>Proveedor</label>
+                            <div class="ai-provider-tabs" id="ai-provider-tabs">
+                                <button class="ai-provider-tab active" data-provider="gemini">
+                                    <span class="ai-provider-tab__icon">💎</span>
+                                    <span>Google Gemini</span>
+                                    <span class="ai-provider-tab__badge">Recomendado</span>
+                                </button>
+                                <button class="ai-provider-tab" data-provider="openai">
+                                    <span class="ai-provider-tab__icon">🧠</span>
+                                    <span>OpenAI / GPT</span>
+                                </button>
+                                <button class="ai-provider-tab" data-provider="anthropic">
+                                    <span class="ai-provider-tab__icon">🔮</span>
+                                    <span>Anthropic / Claude</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ai-panel__field">
+                            <label for="ai-api-key">API Key</label>
+                            <div class="ai-panel__key-row">
+                                <input type="password" id="ai-api-key" placeholder="Pega tu API Key aquí...">
+                                <button class="btn btn--secondary btn--sm" id="btn-save-ai" title="Guardar configuración">
+                                    💾 Guardar
+                                </button>
+                            </div>
+                            <p class="hint" id="ai-key-hint">💎 Gemini: consigue tu key gratis en <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--text-accent);">aistudio.google.com</a></p>
+                        </div>
+                        <div class="ai-panel__field">
+                            <label for="ai-extra-context">Contexto adicional (opcional)</label>
+                            <textarea id="ai-extra-context" rows="2" placeholder="Ej: Peluquería canina en el Valle de Aran, servicios de grooming para perros"></textarea>
+                            <p class="hint">Añade el contexto de tu negocio para textos más relevantes</p>
+                        </div>
+                    </div>
+                    <div class="ai-panel__status" id="ai-status">
+                        <span class="ai-status-dot"></span>
+                        <span id="ai-status-text">IA no configurada</span>
+                    </div>
+                </div>
+
+                <!-- Editor Layout -->
+                <div class="editor">
+                    <!-- Preview column -->
+                    <div class="editor__preview">
+                        <div class="editor__preview-header">
+                            <span class="editor__preview-title">🌐 Vista Previa</span>
+                            <button class="btn btn--ghost btn--sm" id="btn-open-external" title="Abrir en nueva pestaña">↗ Abrir</button>
+                        </div>
+                        <iframe class="editor__preview-frame" id="preview-iframe"></iframe>
+                    </div>
+                    <!-- Content column -->
+                    <div class="editor__content">
+                        <div class="editor__content-header" style="justify-content: space-between;">
+                            <div>
+                                <span class="editor__content-title">✏️ Bloques Editables</span>
+                                <span id="blocks-count" style="font-size: 12px; color: var(--text-muted); margin-left: 8px;"></span>
+                            </div>
+                            <div class="search-box" style="margin-bottom:0; flex: 0 1 200px;">
+                                <span class="search-box__icon">🔍</span>
+                                <input type="text" class="search-box__input" id="search-blocks" placeholder="Buscar texto en bloque..." style="padding-top:6px; padding-bottom:6px; font-size:13px;">
+                            </div>
+                        </div>
+                        <div class="editor__blocks" id="blocks-container">
+                            <!-- Se rellena dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer actions -->
+                <div class="editor-footer">
+                    <div class="editor-footer__info">
+                        <span class="editor-footer__draft-badge" style="background:var(--success-soft); color:var(--success); border-color:rgba(34,197,94,0.2);">🟢 PUBLICADO</span>
+                        <span id="editor-status-text">Sin cambios</span>
+                    </div>
+                    <div class="editor-footer__actions">
+                        <button class="btn btn--secondary" id="btn-reset-changes">Deshacer cambios</button>
+                        <button class="btn btn--primary btn--lg" id="btn-save-draft" disabled>
+                            💾 Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Custom Confirmation Modal (reemplaza confirm() nativo) -->
+    <div class="modal-overlay" id="modal-overlay" style="display:none;">
+        <div class="modal">
+            <div class="modal__icon" id="modal-icon">⚠️</div>
+            <h3 class="modal__title" id="modal-title">Confirmar acción</h3>
+            <p class="modal__message" id="modal-message"></p>
+            <div class="modal__actions">
+                <button class="btn btn--secondary" id="modal-cancel">Cancelar</button>
+                <button class="btn btn--primary" id="modal-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay" style="display: none;">
+        <div class="spinner-lg"></div>
+        <p id="loading-text">Conectando...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="assets/js/parsers/elementor.js"></script>
+    <script src="assets/js/parsers/wpbakery.js"></script>
+    <script src="assets/js/parsers/boldbuilder.js"></script>
+    <script src="assets/js/parsers/divi.js"></script>
+    <script src="assets/js/parsers/gutenberg.js"></script>
+    <script src="assets/js/wp-client.js?v=3.2"></script>
+    <script src="assets/js/app.js?v=3.2"></script>
+</body>
+</html>

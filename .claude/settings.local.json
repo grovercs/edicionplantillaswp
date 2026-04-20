@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -S localhost:8888 -t C:/xampp/htdocs/edicionplantillaswp)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8888/)",
+      "Bash(curl *)",
+      "Bash(python3 -m json.tool)",
+      "Bash(gh --version)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git config *)"
+    ]
+  }
+}

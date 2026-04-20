@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php -S localhost:8888 -t C:/xampp/htdocs/edicionplantillaswp > /dev/null 2>&1 &)",
+      "Bash(php -S localhost:8888 -t C:/xampp/htdocs/edicionplantillaswp > /dev/null 2>&1 &echo *)",
+      "Bash(curl -s -X POST http://localhost:8888/api/connect.php *)",
+      "Bash(curl -s -X POST http://localhost:8888/api/get-pages.php *)",
+      "Bash(curl -s -X POST http://localhost:8888/api/get-content.php *)",
+      "Bash(curl -s -X POST http://localhost:8888/api/update-content.php *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8888/)",
+      "Bash(curl -s http://localhost:8888/)",
+      "Bash(curl *)",
+      "Bash(ls -la *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(grep *)",
+      "Bash(sed *)"
+    ]
+  }
+}

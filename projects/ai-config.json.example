@@ -1,0 +1,18 @@
+{
+    "provider_info": "Este archivo es solo una referencia. Las claves reales se guardan en el localStorage del navegador por seguridad.",
+    "active_provider": "gemini",
+    "providers": {
+        "gemini": {
+            "name": "Google Gemini",
+            "get_key_at": "https://aistudio.google.com/apikey"
+        },
+        "openai": {
+            "name": "OpenAI / GPT",
+            "get_key_at": "https://platform.openai.com/api-keys"
+        },
+        "anthropic": {
+            "name": "Anthropic / Claude",
+            "get_key_at": "https://console.anthropic.com/"
+        }
+    }
+}

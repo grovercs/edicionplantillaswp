@@ -1,0 +1,88 @@
+========================================================================
+WP TEMPLATE EDITOR - NOTAS DE DESARROLLO Y APRENDIZAJES
+========================================================================
+
+Este archivo contiene un registro de soluciones técnicas y problemas
+encontrados para evitar errores repetitivos en el desarrollo.
+
+------------------------------------------------------------------------
+🚀 FUNCIONALIDADES CLAVE IMPLEMENTADAS
+------------------------------------------------------------------------
+1. Sistema de Parsers Multi-Builder:
+   Diferencia lógicamente entre Elementor, WPBakery, BoldBuilder, 
+   Divi y Gutenberg. Cada uno requiere una lógica de extracción distinta.
+
+2. Vista Previa (Preview) con Proxy:
+   Se utiliza 'api/proxy-preview.php' para evitar problemas de CORS 
+   y poder inyectar scripts de navegación en la vista previa.
+
+3. Comunicación Iframe -> Editor:
+   Uso de window.postMessage para que los clics en el sitio original 
+   posicionen el editor en el bloque correcto.
+
+------------------------------------------------------------------------
+⚠️ PROBLEMAS DETECTADOS Y SOLUCIONES (GOTCHAS)
+------------------------------------------------------------------------
+Seguridad (Pendiente): El sistema usa '*' en Access-Control-Allow-Origin
+en todos los archivos de la API para facilitar el desarrollo local.
+Se debe restringir a orígenes específicos en producción.
+
+Problema: Los botones dejaban de responder tras usar confirm().
+Solución: confirm() nativo bloquea el hilo principal y puede causar 
+desconexiones en estados complejos o iframes. Se implementó 
+'customConfirm' usando modales HTML/CSS en app.js.
+
+Problema: Al guardar, se perdía el formato de algunos builders.
+Solución: Siempre trabajar sobre el 'content_raw' y aplicar cambios
+usando el parser específico. No re-maquetar el HTML directamente.
+
+Problema: Iframe no permitía clics directos.
+Solución: La capa de proxy inyecta un script que intercepta el clic,
+previene la navegación y envía el texto/imagen al padre.
+
+Problema: Timeouts en la IA Gemini/OpenAI.
+Solución: Implementar indicador de carga persistente (spinner) y 
+desactivar botones de reescritura mientras se procesa la petición
+en api/ai-rewrite.php.
+
+------------------------------------------------------------------------
+💡 CONSEJOS PARA FUTUROS CAMBIOS
+------------------------------------------------------------------------
+- Antes de editar cualquier página, VERIFICAR el backup. El banner
+  verde debe estar activo antes de "Guardar Cambios".
+- IMPORTANTE: Si estás editando un Backup para sustituir una original, recuerda
+  renombrarla y cambiar el SLUG al finalizar para que tome su lugar.
+- Gestión de proyectos: Las credenciales de cada sitio se guardan en
+  la carpeta `/projects` en formato JSON. Si añades un nuevo sitio,
+  crea un archivo .json allí para no tener que pedir los datos de nuevo.
+- Si un bloque de texto no se encuentra al hacer clic en el preview,
+  revisar la función 'stripHtml' y la normalización de strings en app.js.
+- Al añadir un nuevo builder, crear primero su parser en assets/js/parsers/.
+- Los backups persisten durante la sesión del navegador (sessionStorage).
+  Si cierras el navegador, deberás crear el backup de nuevo.
+
+------------------------------------------------------------------------
+🐛 CORRECCIONES REALIZADAS (2026-04-20)
+------------------------------------------------------------------------
+1. Corregido error de sintaxis en api/proxy-preview.php (cierre extra)
+2. Eliminada función duplicada handleBlockSearch en app.js
+3. Implementada edición de slugs usando update-content.php correctamente
+4. Añadido parámetro slug a WP_API_Client::updatePage()
+5. Añadido botón "Descargar" en bloques de imagen para editar localmente
+6. Implementado bloqueo de edición si no hay backup creado
+7. Añadido resaltado persistente al seleccionar bloques desde el preview
+8. Persistencia de backupId en sessionStorage para mantener estado al navegar
+9. Compatibilidad PHP mejorada (eliminados type hints para versiones antiguas)
+
+------------------------------------------------------------------------
+🔒 REGLA DE SEGURIDAD: BACKUP OBLIGATORIO
+------------------------------------------------------------------------
+- La edición está BLOQUEADA hasta que se cree un backup
+- Los textarea aparecen deshabilitados con fondo rojo
+- El banner superior muestra "EDICIÓN BLOQUEADA" en rojo pulsante
+- Solo se requiere UN backup por página, no uno por edición
+- Esto protege la plantilla original de cambios accidentales
+
+========================================================================
+Última actualización: 2026-04-20
+========================================================================
