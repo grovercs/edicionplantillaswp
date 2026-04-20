@@ -84,8 +84,8 @@ try {
 // ====================================================================
 
 function callGemini(string $apiKey, string $prompt): string {
-    // Modelo actualizado: gemini-1.5-flash-latest (modelo gratuito actual)
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={$apiKey}";
+    // Modelo actualizado: gemini-3-flash (modelo gratuito recomendado)
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key={$apiKey}";
 
     $data = [
         'contents' => [
