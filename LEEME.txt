@@ -46,7 +46,7 @@ desactivar botones de reescritura mientras se procesa la petición
 en api/ai-rewrite.php.
 
 Problema: Modelo Gemini descontinuado (gemini-2.0-flash HTTP 404).
-Solución: Actualizado a gemini-1.5-flash que es el modelo gratuito actual.
+Solución: Actualizado a gemini-1.5-flash-latest que es el modelo gratuito actual.
 Verificar: https://ai.google.dev/gemini-api/docs/models/gemini
 
 ------------------------------------------------------------------------
@@ -77,7 +77,7 @@ Verificar: https://ai.google.dev/gemini-api/docs/models/gemini
 7. Añadido resaltado persistente al seleccionar bloques desde el preview
 8. Persistencia de backupId en sessionStorage para mantener estado al navegar
 9. Compatibilidad PHP mejorada (eliminados type hints para versiones antiguas)
-10. Modelo Gemini actualizado: gemini-2.0-flash → gemini-1.5-flash (descontinuado)
+10. Modelo Gemini actualizado: gemini-2.0-flash → gemini-1.5-flash-latest (descontinuado)
 
 ------------------------------------------------------------------------
 🔒 REGLA DE SEGURIDAD: BACKUP OBLIGATORIO
