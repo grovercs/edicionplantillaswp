@@ -472,6 +472,24 @@
 
             if (result.success) {
                 state.allPages = result.data;
+
+                // Verificar que los backups guardados en sessionStorage aún existan
+                const savedBackups = JSON.parse(sessionStorage.getItem('wp_backup_ids') || '{}');
+                const existingPageIds = result.data.map(p => p.id);
+                let hasChanges = false;
+
+                for (const [pageId, backupId] of Object.entries(savedBackups)) {
+                    // Si el backupId no está en la lista de páginas existentes, eliminarlo
+                    if (!existingPageIds.includes(parseInt(backupId))) {
+                        delete savedBackups[pageId];
+                        hasChanges = true;
+                    }
+                }
+
+                if (hasChanges) {
+                    sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
+                }
+
                 renderPagesGrid(result.data);
                 $('#pages-count').textContent = `${result.data.length} ${state.currentFilter === 'pages' ? 'páginas' : 'posts'} encontrados`;
             } else {
@@ -576,11 +594,22 @@
 
             // Verificar si ya existe un backup guardado para esta página
             const savedBackups = JSON.parse(sessionStorage.getItem('wp_backup_ids') || '{}');
-            state.backupId = savedBackups[page.id] || null;
+            const savedBackupId = savedBackups[page.id] || null;
 
-            // Si la página actual ya es un backup (empieza con [BACKUP]), considerarla como segura
-            if (!state.backupId && page.title && page.title.includes('[BACKUP]')) {
+            // Verificar si el backup guardado aún existe (podría haberse borrado manualmente)
+            // Solo confiamos en el backup si la página actual tiene [BACKUP] en el título
+            // o si el título de la página original indica que se hizo backup
+            if (savedBackupId && page.title && !page.title.includes('[BACKUP]')) {
+                // Limpiar backupId si la página actual no es un backup
+                // (el backup podría haberse borrado desde WordPress)
+                delete savedBackups[page.id];
+                sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
+                state.backupId = null;
+            } else if (page.title && page.title.includes('[BACKUP]')) {
+                // Si la página actual es un backup, considerarla como segura
                 state.backupId = 'existing-backup';
+            } else {
+                state.backupId = savedBackupId;
             }
 
             // Parser
