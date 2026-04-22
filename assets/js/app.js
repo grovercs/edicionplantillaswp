@@ -28,6 +28,8 @@
         aiProvider: 'gemini',
         aiApiKey: '',
         aiExtraContext: '',
+        aiMode: 'seo',
+        aiCustomPrompt: '',
         aiConfigured: false,
         // Media resolution cache
         mediaCache: {},
@@ -142,6 +144,7 @@
             case 'divi': return window.DiviParser;
             case 'gutenberg': return window.GutenbergParser;
             case 'elementor': return window.ElementorParser;
+            case 'classic': return window.ElementorParser;
             default: return window.ElementorParser;
         }
     }
@@ -188,9 +191,10 @@
             // Buscar bloque por texto (normalizado)
             const idx = state.currentBlocks.findIndex(b => {
                 if (b.type === 'image') return false;
-                const normOriginal = stripHtml(b.original).trim().toLowerCase();
-                const normCurrent = stripHtml(b.current).trim().toLowerCase();
-                const normClicked = text.toLowerCase();
+                const normOriginal = stripHtml(b.original).replace(/\s+/g, ' ').replace(/\u00A0/g, ' ').trim().toLowerCase();
+                const normCurrent = stripHtml(b.current).replace(/\s+/g, ' ').replace(/\u00A0/g, ' ').trim().toLowerCase();
+                const normClicked = text.replace(/\s+/g, ' ').replace(/\u00A0/g, ' ').trim().toLowerCase();
+                
                 // Coincidencia flexible (subcadena)
                 return normOriginal.includes(normClicked) || normCurrent.includes(normClicked) || 
                        normClicked.includes(normOriginal.substring(0, 50));
@@ -304,6 +308,8 @@
                 state.aiProvider = data.provider || 'gemini';
                 state.aiApiKey = data.apiKey || '';
                 state.aiExtraContext = data.extraContext || '';
+                state.aiMode = data.mode || 'seo';
+                state.aiCustomPrompt = data.customPrompt || '';
                 state.aiConfigured = !!state.aiApiKey;
             } catch { /* ignore */ }
         }
@@ -314,18 +320,20 @@
         const provider = state.aiProvider;
         const apiKey = $('#ai-api-key').value.trim();
         const extraContext = $('#ai-extra-context').value.trim();
+        const customPrompt = $('#ai-custom-prompt').value.trim();
 
         state.aiProvider = provider;
         state.aiApiKey = apiKey;
         state.aiExtraContext = extraContext;
+        state.aiCustomPrompt = customPrompt;
         state.aiConfigured = !!apiKey;
 
         localStorage.setItem('wp_editor_ai', JSON.stringify({
-            provider, apiKey, extraContext
+            provider, apiKey, extraContext, mode: state.aiMode, customPrompt
         }));
 
         updateAIUI();
-        toast(apiKey ? `IA configurada: ${provider.toUpperCase()}` : 'Configuración de IA guardada', 'success');
+        toast(apiKey ? `IA configurada: ${provider.toUpperCase()} (${state.aiMode === 'custom' ? 'Prompt personalizado' : 'SEO'})` : 'Configuración de IA guardada', 'success');
     }
 
     function updateAIUI() {
@@ -342,6 +350,24 @@
         if (ctxField && state.aiExtraContext && !ctxField.value) {
             ctxField.value = state.aiExtraContext;
         }
+
+        const customPromptField = $('#ai-custom-prompt');
+        if (customPromptField && state.aiCustomPrompt && !customPromptField.value) {
+            customPromptField.value = state.aiCustomPrompt;
+        }
+
+        // Toggle modo SEO / Custom
+        $$('.ai-mode-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.mode === state.aiMode);
+        });
+        const contextFieldWrap = $('#ai-context-field');
+        const customFieldWrap = $('#ai-custom-prompt-field');
+        const modeHint = $('#ai-mode-hint');
+        if (contextFieldWrap) contextFieldWrap.style.display = state.aiMode === 'seo' ? 'block' : 'none';
+        if (customFieldWrap) customFieldWrap.style.display = state.aiMode === 'custom' ? 'block' : 'none';
+        if (modeHint) modeHint.textContent = state.aiMode === 'custom'
+            ? 'La IA usará TUS instrucciones personalizadas'
+            : 'La IA reescribirá con optimización SEO automática';
 
         const statusDot = $('.ai-status-dot');
         const statusText = $('#ai-status-text');
@@ -382,38 +408,26 @@
         const text = $('#backup-banner-text');
         
         const isExistingBackup = state.currentPage && state.currentPage.title && state.currentPage.title.includes('[BACKUP]');
+        
+        banner.style.display = 'flex';
 
         if (state.backupId || isExistingBackup) {
             banner.className = 'backup-banner backup-banner--success';
+            banner.title = state.backupId ? 'Copia de seguridad activa' : 'Editando Backup Directamente';
             if (text) {
-                const mainMsg = state.backupId 
-                    ? `🛡️ <strong>Modo Seguro Activo:</strong> Estás editando la página original. El backup (ID: ${state.backupId}) está guardado.`
-                    : `ℹ️ <strong>Estás editando un Backup:</strong> Esta es una copia de seguridad cargada directamente.`;
-                
-                text.innerHTML = `
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <div>${mainMsg}</div>
-                        <div style="font-size: 11px; font-weight: normal; opacity: 0.9;">
-                            💡 <strong>Recordatorio:</strong> Si esta es la versión final, recuerda renombrarla y cambiar el slug por el de la original para que tome su lugar.
-                        </div>
-                    </div>
-                `;
+                text.style.display = 'inline-block';
+                text.innerHTML = state.backupId ? '<strong>Modo Seguro</strong>' : '<strong>Modo Nativo</strong>';
             }
             if (actionBtn) actionBtn.style.display = 'none';
         } else {
             banner.className = 'backup-banner backup-banner--danger';
+            banner.title = 'ATENCIÓN: Se requiere crear un backup antes de editar.';
             if (text) {
-                text.innerHTML = `
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <div>🔒 <strong>EDICIÓN BLOQUEADA:</strong> No se ha creado backup de esta página.</div>
-                        <div style="font-size: 12px; font-weight: normal;">
-                            La edición está deshabilitada hasta que crees un backup. Esto protege la página original.
-                        </div>
-                    </div>
-                `;
+                text.style.display = 'inline-block';
+                text.innerHTML = `<strong>¡BLOQUEADO!</strong> Requiere Backup`;
             }
             if (actionBtn) {
-                actionBtn.style.display = '';
+                actionBtn.style.display = 'inline-block';
                 actionBtn.textContent = '🔓 Crear Backup para Editar';
                 actionBtn.className = 'btn btn--danger btn--sm';
             }
@@ -478,6 +492,19 @@
                 const savedBackups = JSON.parse(sessionStorage.getItem('wp_backup_ids') || '{}');
                 const backupPages = result.data.filter(p => p.title && p.title.startsWith('[BACKUP'));
 
+                // Crear un set de IDs de backups válidos que existen actualmente en WordPress
+                const validBackupIds = new Set(backupPages.map(p => p.id));
+
+                // Limpiar del caché cualquier backup que ya no exista en WordPress
+                Object.keys(savedBackups).forEach(originalPageId => {
+                    const backupId = savedBackups[originalPageId];
+                    // Si es un ID numérico y no está en la lista de backups válidos, eliminarlo
+                    if (backupId && backupId !== 'existing-backup' && !validBackupIds.has(backupId)) {
+                        console.log(`Limpiando backup obsoleto del caché: Página ${originalPageId} -> Backup ${backupId}`);
+                        delete savedBackups[originalPageId];
+                    }
+                });
+
                 // Para cada backup encontrado, extraer el título original y mapearlo
                 backupPages.forEach(backupPage => {
                     // El título del backup es: "[BACKUP fecha] Título Original"
@@ -493,6 +520,7 @@
                 });
 
                 sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
+                console.log("DEBUG: Backups actualizados en caché:", savedBackups);
 
                 renderPagesGrid(result.data);
                 $('#pages-count').textContent = `${result.data.length} ${state.currentFilter === 'pages' ? 'páginas' : 'posts'} encontrados`;
@@ -582,6 +610,9 @@
     window.appOpenEditor = async function (pageId) {
         showLoading('Cargando contenido de la página...');
 
+        // SIEMPRE resetear el backupId al entrar - se volverá a verificar
+        state.backupId = null;
+
         try {
             const result = await wpClient.getPageContent(pageId, state.currentFilter);
 
@@ -592,7 +623,7 @@
             }
 
             const page = result.data;
-            console.log("DEBUG: Opening page", page);
+            console.log("DEBUG: Opening page", page.title, "ID:", page.id);
             state.currentPage = page;
             state.originalContent = page.content_raw;
 
@@ -602,9 +633,59 @@
             // Si la página actual es un backup (tiene [BACKUP] en título), marcar como segura
             if (page.title && page.title.includes('[BACKUP]')) {
                 state.backupId = 'existing-backup';
+                console.log("DEBUG: Esta página ES un backup existente");
             } else {
-                // Usar el backup guardado en sessionStorage
-                state.backupId = savedBackups[page.id] || null;
+                // Verificar que el backup guardado realmente existe en WordPress
+                const cachedBackupId = savedBackups[page.id] || null;
+                console.log("DEBUG: Cached backup ID para página", page.id, ":", cachedBackupId);
+
+                if (cachedBackupId && cachedBackupId !== 'existing-backup') {
+                    try {
+                        // Verificar que el backup aún existe en WordPress
+                        const checkResult = await wpClient.getPageContent(cachedBackupId, state.currentFilter);
+                        if (checkResult.success && checkResult.data && checkResult.data.id) {
+                            // El backup existe - verificar que realmente es un backup de esta página
+                            const backupPage = checkResult.data;
+                            const isValidBackup = backupPage.title && (
+                                backupPage.title.includes('[BACKUP]') ||
+                                backupPage.title.includes(page.title)
+                            );
+
+                            if (isValidBackup) {
+                                state.backupId = cachedBackupId;
+                                console.log("DEBUG: Backup verificado correctamente:", cachedBackupId);
+                            } else {
+                                console.warn(`Backup encontrado pero no parece ser de esta página. Limpiando caché.`);
+                                delete savedBackups[page.id];
+                                sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
+                                state.backupId = null;
+                            }
+                        } else {
+                            // El backup fue borrado en WordPress — limpiar caché
+                            console.warn(`Backup ID ${cachedBackupId} ya no existe en WordPress. Limpiando caché.`);
+                            delete savedBackups[page.id];
+                            sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
+                            state.backupId = null;
+                            // Notificar al usuario después de que se cargue la página
+                            setTimeout(() => {
+                                toast('⚠️ El backup anterior fue eliminado. Crea uno nuevo para editar.', 'warning');
+                            }, 500);
+                        }
+                    } catch (err) {
+                        // Error al verificar — limpiar caché para forzar recreación
+                        console.warn(`Error al verificar backup ${cachedBackupId}:`, err);
+                        delete savedBackups[page.id];
+                        sessionStorage.setItem('wp_backup_ids', JSON.stringify(savedBackups));
+                        state.backupId = null;
+                        // Notificar al usuario después de que se cargue la página
+                        setTimeout(() => {
+                            toast('⚠️ No se pudo verificar el backup. Crea uno nuevo para editar.', 'warning');
+                        }, 500);
+                    }
+                } else {
+                    state.backupId = null;
+                    console.log("DEBUG: No hay backup en caché para esta página");
+                }
             }
 
             // Parser
@@ -814,23 +895,35 @@
             ? (cachedMedia ? (cachedMedia.thumb || cachedMedia.url) : '')
             : (block.original || '');
 
-        const fileName = block.isMediaId
-            ? (cachedMedia ? (cachedMedia.url || '').split('/').pop() : `Media ID: ${block.original}`)
-            : (block.original || '').split('/').pop();
+        // Obtener nombre de archivo - si es Media ID sin cache, usamos el title si existe o indicamos que está cargando
+        let fileName = '';
+        if (block.isMediaId) {
+            if (cachedMedia && cachedMedia.url) {
+                // Tenemos la URL resuelta - extraer nombre del archivo
+                fileName = cachedMedia.url.split('/').pop();
+            } else {
+                // Aún no resuelto - mostrar indicador
+                fileName = `Cargando imagen #${block.original}...`;
+            }
+        } else {
+            // URL directa - extraer nombre
+            fileName = (block.original || '').split('/').pop() || 'imagen';
+        }
 
         const isModified = block.current !== block.original;
 
-        // Construir URL de descarga solo si tenemos una URL válida
+        // Construir URL de descarga
         let downloadUrl = '';
         if (cachedMedia && cachedMedia.url) {
-            // Tenemos la URL resuelta del media cache
             downloadUrl = cachedMedia.url;
         } else if (block.original && block.original.startsWith('http')) {
-            // Es una URL directa
             downloadUrl = block.original;
         }
-        // NOTA: Si es un Media ID sin resolver, NO mostramos el botón de descargar
-        // hasta que se resuelva mediante resolveMediaThumbnails()
+
+        // Información de dimensiones si está disponible
+        const dimensionsInfo = cachedMedia && cachedMedia.width
+            ? `${cachedMedia.width}x${cachedMedia.height}px`
+            : (cachedMedia && cachedMedia.url ? 'Tamaño original' : '');
 
         // Verificar si hay backup para habilitar/deshabilitar edición
         const hasBackup = state.backupId || (state.currentPage && state.currentPage.title && state.currentPage.title.includes('[BACKUP]'));
@@ -854,21 +947,22 @@
                                     ↺ Deshacer
                                 </button>
                             ` : ''}
-                            ${downloadUrl ? `
-                                <button class="btn btn--ghost btn--sm" onclick="window.appDownloadImage(${index}, '${escapeHtml(downloadUrl)}')" title="Descargar imagen original">
-                                    ⬇️ Descargar
-                                </button>
-                            ` : ''}
                         </div>
                     </div>
                     <div class="block-item__upload-info" id="block-info-${index}">
                         ${escapeHtml(fileName)}
+                        ${dimensionsInfo ? `<span style="color: var(--text-muted); margin-left: 8px; font-size: 11px;">📐 ${dimensionsInfo}</span>` : ''}
                         ${!hasBackup ? '<span style="color: var(--danger); margin-left: 8px;">⚠️ Requiere backup</span>' : ''}
                     </div>
-                    <label class="${uploadBtnClass}" ${!hasBackup ? 'style="opacity: 0.5; cursor: not-allowed;"' : ''}>
-                        📤 Cambiar imagen
-                        <input type="file" data-block-idx="${index}" accept="image/*" style="display:none;" ${disabledAttr}>
-                    </label>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <label class="${uploadBtnClass}" ${!hasBackup ? 'style="opacity: 0.5; cursor: not-allowed; flex: 1;"' : 'style="flex: 1;"'}>
+                            📤 Cambiar
+                            <input type="file" data-block-idx="${index}" accept="image/*" style="display:none;" ${disabledAttr}>
+                        </label>
+                        <button class="btn btn--ghost btn--sm" onclick="window.appDownloadImage(${index})" title="Abrir imagen original para visualizar o descargar" style="white-space: nowrap;">
+                            ⬇️ Descargar
+                        </button>
+                    </div>
                     <div id="upload-status-${index}" style="font-size: 11px; color: var(--success); display: none;"></div>
                 </div>
             </div>
@@ -988,6 +1082,9 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     text: textToRewrite,
+                    block_type: block.type || 'text',
+                    mode: state.aiMode,
+                    custom_prompt: state.aiCustomPrompt,
                     provider: state.aiProvider,
                     api_key: state.aiApiKey,
                     site_name: wpClient.siteInfo?.site_name || '',
@@ -1049,41 +1146,55 @@
     };
 
     /**
-     * Descargar imagen original para editarla localmente
+     * Abrir imagen - abre la URL en nueva pestaña, permitiendo descargarla manualmente
+     * @param {number} idx - Índice del bloque de imagen
      */
-    window.appDownloadImage = function(idx, imageUrl) {
+    window.appDownloadImage = async function(idx) {
+        const block = state.currentBlocks[idx];
+        if (!block || block.type !== 'image') {
+            toast('Bloque no encontrado', 'error');
+            return;
+        }
+
+        let imageUrl = '';
+
+        // Obtener URL de la imagen
+        if (block.isMediaId && /^\d+$/.test(block.original)) {
+            const mediaId = parseInt(block.original);
+            const cached = state.mediaCache[mediaId];
+
+            if (cached && cached.url) {
+                imageUrl = cached.url;
+            } else {
+                toast('Cargando información de la imagen...', 'info');
+                try {
+                    const result = await wpClient.resolveMedia([mediaId]);
+                    if (result.success && result.data && result.data[mediaId]) {
+                        state.mediaCache[mediaId] = result.data[mediaId];
+                        imageUrl = state.mediaCache[mediaId].url;
+                    } else {
+                        toast('No se pudo encontrar la URL de origen', 'error');
+                        return;
+                    }
+                } catch (err) {
+                    toast('Error: ' + err.message, 'error');
+                    return;
+                }
+            }
+        } else if (block.original && block.original.startsWith('http')) {
+            imageUrl = block.original;
+        }
+
         if (!imageUrl) {
-            toast('No hay imagen disponible para descargar', 'error');
+            toast('URL no disponible', 'error');
             return;
         }
 
-        // Extraer nombre de archivo de la URL
-        const fileName = imageUrl.split('/').pop().split('?')[0] || 'imagen.jpg';
-
-        // Verificar que la URL es válida (debe empezzar con http)
-        if (!imageUrl.startsWith('http')) {
-            toast('URL de imagen inválida. Inténtalo de nuevo en unos segundos.', 'error');
-            console.error('URL inválida para descargar:', imageUrl);
-            return;
-        }
-
-        // Crear enlace temporal para descarga
-        const link = document.createElement('a');
-        link.href = imageUrl;
-        link.target = '_blank';
-        link.download = fileName;
-
-        // Intentar descarga
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        toast(`Descargando ${fileName}... Si no funciona, abre la imagen en pestaña nueva y guárdala manualmente.`, 'success');
-
-        // Abrir también en pestaña nueva como fallback (por si el navegador bloquea la descarga)
-        setTimeout(() => {
-            window.open(imageUrl, '_blank');
-        }, 500);
+        toast('Abriendo imagen en nueva pestaña...', 'success');
+        
+        // Abre la URL en el navegador nativo para que el usuario pueda verla
+        // y descargarla manualmente con clic derecho.
+        window.open(imageUrl, '_blank');
     };
 
     // =========================================================================
@@ -1200,7 +1311,7 @@
                 state.currentPage.id,
                 newContent,
                 state.currentFilter,
-                state.backupId ? true : false // skip_backup si ya tenemos uno
+                !!state.backupId // skip_backup = true si ya existe un backup
             );
 
             if (result.success) {
@@ -1335,8 +1446,39 @@
             });
         });
 
+        // AI mode tabs (SEO / Custom)
+        $$('.ai-mode-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                state.aiMode = tab.dataset.mode;
+                updateAIUI();
+            });
+        });
+
         // Save AI settings
         $('#btn-save-ai').addEventListener('click', saveAISettings);
+
+        // Auto-guardado
+        ['#ai-api-key', '#ai-extra-context', '#ai-custom-prompt'].forEach(selector => {
+            const el = $(selector);
+            if (el) {
+                el.addEventListener('change', () => {
+                    const provider = state.aiProvider;
+                    const apiKey = $('#ai-api-key').value.trim();
+                    const extraContext = $('#ai-extra-context').value.trim();
+                    const customPrompt = $('#ai-custom-prompt').value.trim();
+
+                    state.aiProvider = provider;
+                    state.aiApiKey = apiKey;
+                    state.aiExtraContext = extraContext;
+                    state.aiCustomPrompt = customPrompt;
+                    state.aiConfigured = !!apiKey;
+
+                    localStorage.setItem('wp_editor_ai', JSON.stringify({
+                        provider, apiKey, extraContext, mode: state.aiMode, customPrompt
+                    }));
+                });
+            }
+        });
 
         // Guardar como borrador
         $('#btn-save-draft').addEventListener('click', handleSaveDraft);
@@ -1347,6 +1489,47 @@
         // Búsqueda de bloques
         if ($('#search-blocks')) {
             $('#search-blocks').addEventListener('input', handleBlockSearch);
+        }
+
+        // Editar título
+        if ($('#btn-edit-title')) {
+            $('#btn-edit-title').addEventListener('click', async () => {
+                if (!state.currentPage) return;
+
+                const currentTitle = $('#editor-page-title').textContent.trim();
+                const newTitle = prompt('Introduce el nuevo título para esta página/blog:', currentTitle);
+
+                if (newTitle !== null && newTitle.trim() !== '' && newTitle.trim() !== currentTitle) {
+                    showLoading('Actualizando título...');
+                    try {
+                        const result = await wpClient.apiCall('update-content.php', {
+                            page_id: state.currentPage.id,
+                            content: state.currentPage.content_raw,
+                            type: state.currentFilter,
+                            title: newTitle.trim(),
+                            slug: state.currentPage.slug
+                        });
+
+                        if (result.success) {
+                            state.currentPage.title = newTitle.trim();
+                            $('#editor-page-title').textContent = state.currentPage.title;
+                            toast('Título actualizado correctamente', 'success');
+                            
+                            // Si existe backup, usarlo para que no genere uno nuevo cada vez
+                            if (result.data && result.data.backup && result.data.backup.backup_id !== 'skipped') {
+                                state.backupId = result.data.backup.backup_id;
+                                updateBackupBanner();
+                            }
+                        } else {
+                            toast('Error al actualizar el título: ' + (result.error || 'Desconocido'), 'error');
+                        }
+                    } catch (err) {
+                        toast('Error de red: ' + err.message, 'error');
+                    } finally {
+                        hideLoading();
+                    }
+                }
+            });
         }
 
         // Editar slug

@@ -51,9 +51,12 @@ if ($error || $httpCode >= 400 || !$html) {
 $parsed = parse_url($finalUrl);
 $baseUrl = $parsed['scheme'] . '://' . $parsed['host'];
 
-// Inyectar <base> tag para que los recursos relativos carguen correctamente
+// Inyectar <base> tag para que los recursos relativos carguen correctamente y ocultar el proxy a los firewalls cerrando el Referer
 if (stripos($html, '<base') === false) {
-    $html = preg_replace('/<head([^>]*)>/i', '<head$1><base href="' . $baseUrl . '/">', $html, 1);
+    $html = preg_replace('/<head([^>]*)>/i', '<head$1><base href="' . $baseUrl . '/"><meta name="referrer" content="no-referrer">', $html, 1);
+} else {
+    // Si ya existe <base>, solo inyectamos la meta etiqueta referrer
+    $html = preg_replace('/<head([^>]*)>/i', '<head$1><meta name="referrer" content="no-referrer">', $html, 1);
 }
 
 // Reescribir URLs relativas tipo src="/..." y href="/..."
@@ -133,7 +136,7 @@ $injectJS = '<script>
             // Actualizar texto en vivo sin recargar
             var elements = findElementsByText(data.original);
             elements.forEach(function(el) {
-                el.innerText = data.current;
+                el.innerHTML = data.current;
                 flashElement(el);
             });
         }
@@ -150,9 +153,14 @@ $injectJS = '<script>
 
     function findElementsByText(text) {
         if (!text) return [];
-        var normalizedSearch = text.trim().substring(0, 50).toLowerCase();
+        // Strip HTML inside the iframe memory
+        var tmp = document.createElement("DIV");
+        tmp.innerHTML = text;
+        var strippedSearch = (tmp.textContent || tmp.innerText || "").replace(/\s+/g, " ").replace(/\u00A0/g, " ").trim().substring(0, 50).toLowerCase();
+        
         return Array.from(document.querySelectorAll(selectors)).filter(function(el) {
-            return el.textContent.trim().toLowerCase().includes(normalizedSearch);
+            var elText = (el.textContent || "").replace(/\s+/g, " ").replace(/\u00A0/g, " ").trim().toLowerCase();
+            return elText.includes(strippedSearch);
         });
     }
 
@@ -190,9 +198,11 @@ $injectJS = '<script>
                 e.stopPropagation();
                 flashElement(el);
 
+                var capturedText = (el.textContent || "").replace(/\s+/g, " ").replace(/\u00A0/g, " ").trim();
+                
                 window.parent.postMessage({
                     type: "preview-click",
-                    text: el.textContent.trim()
+                    text: capturedText
                 }, "*");
             });
         }

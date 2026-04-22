@@ -37,3 +37,8 @@ checkpoints/
 tmp/
 temp/
 *.tmp
+
+# Archivos de depuración y test
+*.bin
+test_*.php
+test-*.php

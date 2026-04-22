@@ -94,12 +94,12 @@ class WPClient {
     // ACTUALIZACIÓN
     // =========================================================================
 
-    async updateContent(pageId, content, type = 'pages', title = null) {
+    async updateContent(pageId, content, type = 'pages', skipBackup = false) {
         return this.apiCall('update-content.php', {
             page_id: pageId,
             content,
             type,
-            title
+            skip_backup: skipBackup
         });
     }
 

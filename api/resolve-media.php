@@ -32,11 +32,17 @@ foreach ($mediaIds as $id) {
         $thumb = $result['data']['media_details']['sizes']['thumbnail']['source_url'] 
             ?? $result['data']['media_details']['sizes']['medium']['source_url'] 
             ?? $url;
+        // Obtener dimensiones originales de la imagen
+        $width = $result['data']['media_details']['width'] ?? null;
+        $height = $result['data']['media_details']['height'] ?? null;
+
         $resolved[$id] = [
-            'url'   => $url,
-            'thumb' => $thumb,
-            'title' => $result['data']['title']['rendered'] ?? '',
-            'alt'   => $result['data']['alt_text'] ?? '',
+            'url'    => $url,
+            'thumb'  => $thumb,
+            'title'  => $result['data']['title']['rendered'] ?? '',
+            'alt'    => $result['data']['alt_text'] ?? '',
+            'width'  => $width,
+            'height' => $height,
         ];
     }
 }

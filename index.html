@@ -75,7 +75,8 @@
                             <button class="filter-tab" data-filter="posts">Posts</button>
                         </div>
                         <div class="search-box">
-                            <input type="text" id="search-pages" placeholder="Buscar página...">
+                            <input type="password" style="display:none;" tabindex="-1" autocomplete="new-password" aria-hidden="true">
+                            <input type="search" id="search-pages" name="dummy_search_1x2" placeholder="Buscar página..." autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" autocorrect="off" autocapitalize="off" spellcheck="false">
                         </div>
                         <button class="btn btn--secondary" id="btn-refresh">↻ Refrescar</button>
                         <button class="btn btn--ghost" id="btn-disconnect">Desconectar</button>
@@ -96,30 +97,32 @@
                         <button class="btn btn--ghost btn--icon" id="btn-back-to-pages" title="Volver al listado">
                             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                         </button>
-                        <div class="editor-toolbar__info">
-                            <h2 class="editor-toolbar__page-name" id="editor-page-title">—</h2>
-                            <div class="editor-toolbar__meta">
+                        <div class="editor-toolbar__info" style="display:flex; align-items:center; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center;">
+                                <h2 class="editor-toolbar__page-name" id="editor-page-title" style="margin:0;">—</h2>
+                                <button class="btn btn--icon btn--sm" id="btn-edit-title" title="Editar Título" style="padding: 2px 6px; background: transparent; color: var(--primary); margin-left: 6px;"><span style="font-size:14px">✏️</span></button>
+                            </div>
+                            <div class="editor-toolbar__meta" style="margin-left: 12px">
                                 <span class="page-card__builder" id="editor-builder-badge">—</span>
                                 <span class="editor-toolbar__url" id="editor-page-url"></span>
-                                <button class="btn btn--icon btn--sm" id="btn-edit-slug" title="Editar enlace (slug)" style="padding: 2px 6px; background: transparent; color: var(--primary);"><span style="font-size:12px">✏️</span></button>
+                                <button class="btn btn--icon btn--sm" id="btn-edit-slug" title="Editar enlace (slug)" style="padding: 2px 6px; background: transparent; color: var(--primary);"><span style="font-size:14px">✏️</span></button>
                             </div>
                         </div>
                     </div>
-                    <div class="editor-toolbar__actions">
-                        <button class="btn btn--secondary btn--sm" id="btn-create-backup" title="Crear copia de seguridad de esta página">
+                    <div class="editor-toolbar__actions" style="align-items: center;">
+                        <!-- Backup warning / status banner (compacto en toolbar) -->
+                        <div id="backup-banner" class="backup-banner backup-banner--warning" style="display: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; height: 32px; box-sizing: border-box; margin-right: 4px;">
+                            <span style="margin-right: 6px; display: inline-block; transform: translateY(-1px);">⚠️</span>
+                            <span id="backup-banner-text" style="display: none;">Requiere Backup</span>
+                            <button class="btn btn--sm btn--backup-action" id="btn-banner-backup" style="padding: 2px 8px; font-size: 11px; margin-left: 8px; height: 24px;">🛡️ Duplicar</button>
+                        </div>
+                        <button class="btn btn--secondary btn--sm" id="btn-create-backup" title="Crear copia de seguridad de esta página" style="height: 32px;">
                             🛡️ Crear Backup
                         </button>
-                        <button class="btn btn--secondary btn--sm" id="btn-ai-toggle" title="Configurar la IA para reescribir textos">
+                        <button class="btn btn--secondary btn--sm" id="btn-ai-toggle" title="Configurar la IA para reescribir textos" style="height: 32px;">
                             🤖 Configurar IA
                         </button>
                     </div>
-                </div>
-
-                <!-- Backup warning / status banner -->
-                <div id="backup-banner" class="backup-banner backup-banner--warning">
-                    <span>⚠️</span>
-                    <span id="backup-banner-text">No se ha creado backup de esta página. Se recomienda duplicar la página antes de editarla.</span>
-                    <button class="btn btn--sm btn--backup-action" id="btn-banner-backup">🛡️ Duplicar página ahora</button>
                 </div>
 
                 <!-- AI Settings Panel (colapsable) -->
@@ -158,9 +161,26 @@
                             <p class="hint" id="ai-key-hint">💎 Gemini: consigue tu key gratis en <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--text-accent);">aistudio.google.com</a></p>
                         </div>
                         <div class="ai-panel__field">
-                            <label for="ai-extra-context">Contexto adicional (opcional)</label>
+                            <label>Modo de reescritura</label>
+                            <div class="ai-mode-tabs" id="ai-mode-tabs">
+                                <button class="ai-mode-tab active" data-mode="seo">
+                                    📈 SEO Automático
+                                </button>
+                                <button class="ai-mode-tab" data-mode="custom">
+                                    ✍️ Prompt Personalizado
+                                </button>
+                            </div>
+                            <p class="hint" id="ai-mode-hint">La IA reescribirá con optimización SEO automática</p>
+                        </div>
+                        <div class="ai-panel__field" id="ai-context-field">
+                            <label for="ai-extra-context">Contexto del negocio (opcional)</label>
                             <textarea id="ai-extra-context" rows="2" placeholder="Ej: Peluquería canina en el Valle de Aran, servicios de grooming para perros"></textarea>
                             <p class="hint">Añade el contexto de tu negocio para textos más relevantes</p>
+                        </div>
+                        <div class="ai-panel__field" id="ai-custom-prompt-field" style="display:none;">
+                            <label for="ai-custom-prompt">Tu prompt para la IA</label>
+                            <textarea id="ai-custom-prompt" rows="5" placeholder="Escribe tus instrucciones para la IA. Ejemplo:&#10;&#10;Traduce el texto al inglés manteniendo el tono profesional.&#10;&#10;Reescribe el texto con un tono más informal y juvenil.&#10;&#10;Hazlo más corto y directo, máximo 2 frases."></textarea>
+                            <p class="hint">💡 Escribe exactamente lo que quieres que haga la IA. El texto original del bloque se adjuntará automáticamente.</p>
                         </div>
                     </div>
                     <div class="ai-panel__status" id="ai-status">
@@ -187,8 +207,7 @@
                                 <span id="blocks-count" style="font-size: 12px; color: var(--text-muted); margin-left: 8px;"></span>
                             </div>
                             <div class="search-box" style="margin-bottom:0; flex: 0 1 200px;">
-                                <span class="search-box__icon">🔍</span>
-                                <input type="text" class="search-box__input" id="search-blocks" placeholder="Buscar texto en bloque..." style="padding-top:6px; padding-bottom:6px; font-size:13px;">
+                                <input type="text" class="search-box__input" id="search-blocks" placeholder="Buscar texto en bloque..." style="padding-top:6px; padding-bottom:6px; font-size:13px;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                             </div>
                         </div>
                         <div class="editor__blocks" id="blocks-container">
@@ -243,7 +262,7 @@
     <script src="assets/js/parsers/boldbuilder.js"></script>
     <script src="assets/js/parsers/divi.js"></script>
     <script src="assets/js/parsers/gutenberg.js"></script>
-    <script src="assets/js/wp-client.js?v=3.2"></script>
-    <script src="assets/js/app.js?v=3.2"></script>
+    <script src="assets/js/wp-client.js?v=3.3"></script>
+    <script src="assets/js/app.js?v=3.3"></script>
 </body>
 </html>

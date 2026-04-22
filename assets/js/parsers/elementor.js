@@ -112,28 +112,55 @@ window.ElementorParser = {
         return blocks;
     },
 
-    /**
-     * Reconstruir contenido HTML con los cambios
-     * Para Elementor basado en HTML renderizado, hacemos búsqueda-reemplazo
-     */
     reconstruct(originalContent, blocks) {
-        let content = originalContent;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(originalContent, 'text/html');
 
-        for (const block of blocks) {
-            if (block.current === block.original) continue;
+        blocks.forEach(block => {
+            if (block.current === block.original) return;
 
             if (block.type === 'image' && block.isUrl) {
-                // Reemplazar URL de imagen
-                content = content.split(block.original).join(block.current);
-            } else if (block.htmlOriginal) {
-                // Para headings, reemplazar el innerHTML
-                content = content.replace(block.htmlOriginal, block.current);
+                const els = doc.querySelectorAll('img');
+                els.forEach(el => {
+                    if (el.getAttribute('src') === block.original) {
+                        el.setAttribute('src', block.current);
+                    }
+                });
+            } else if (block.type === 'heading') {
+                const els = doc.querySelectorAll(block.tagName || 'h1, h2, h3, h4, h5, h6');
+                els.forEach(el => {
+                    if (el.innerHTML === block.htmlOriginal || el.textContent.trim() === block.original) {
+                        el.innerHTML = block.current;
+                    }
+                });
+            } else if (block.type === 'button') {
+                const els = doc.querySelectorAll('a');
+                els.forEach(el => {
+                    if (el.textContent.trim() === block.original) {
+                        el.innerHTML = block.current; // Keep it as HTML just in case
+                    }
+                });
             } else {
-                // Para texto, reemplazar directamente
-                content = content.replace(block.original, block.current);
+                // Texts and Lists
+                if (block.label && block.label.startsWith('Lista')) {
+                    const els = doc.querySelectorAll('ul, ol');
+                    els.forEach(el => {
+                        if (el.innerHTML.trim() === block.original) {
+                            el.innerHTML = block.current;
+                        }
+                    });
+                } else {
+                    const els = doc.querySelectorAll('p');
+                    els.forEach(el => {
+                        if (el.innerHTML.trim() === block.original) {
+                            el.innerHTML = block.current;
+                        }
+                    });
+                }
             }
-        }
+        });
 
-        return content;
+        // Retornamos el interior del body, que contiene el HTML enriquecido y reparado de nuevo a String
+        return doc.body.innerHTML;
     }
 };

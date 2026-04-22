@@ -22,9 +22,11 @@ Crear una herramienta local avanzada para editar sitios WordPress de forma intel
   - BoldBuilder (Usado en aranguau.com con tema Pawsitive)
   - Divi
   - Gutenberg / Bloques nativos
-- **IA**: Integración con Google Gemini (recomendado), OpenAI y Anthropic para reescritura de contenidos.
+- **IA**: Integración con Google Gemini (recomendado, modelo: `gemini-2.5-flash`), OpenAI y Anthropic para reescritura de contenidos.
+  - **Modo SEO**: Prompts automáticos diferenciados por tipo de bloque (heading/text/button).
+  - **Modo Custom**: El usuario escribe su propio prompt personalizado.
 
-## ✅ Hitos Alcanzados (v3)
+## ✅ Hitos Alcanzados (v3.3)
 - [x] **Interfaz Profesional**: Dashboard moderno con navegación entre pantallas (Conexión, Páginas, Editor).
 - [x] **Modales Custom**: Reemplazo de `confirm()` nativo para evitar bloqueos del navegador.
 - [x] **Preview Interactivo**: Al hacer clic en el iframe de vista previa, el editor hace scroll automático al bloque de texto o imagen correspondiente.
@@ -35,6 +37,10 @@ Crear una herramienta local avanzada para editar sitios WordPress de forma intel
 - [x] **Descarga de Imágenes**: Botón para descargar imágenes originales y editarlas localmente manteniendo dimensiones.
 - [x] **Bloqueo de Edición sin Backup**: Los campos se deshabilitan hasta crear un backup, protegiendo la plantilla original.
 - [x] **Persistencia de Backup**: Los backupIds se guardan en sessionStorage para mantener acceso al volver a una página.
+- [x] **IA con Prompts por Tipo de Bloque**: Títulos → cortos. Botones → 2-4 palabras. Párrafos → SEO completo.
+- [x] **Modo Prompt Personalizado**: El usuario puede escribir su propio prompt para la IA.
+- [x] **Backup Único**: Solo se crea un backup por página; `skip_backup` se envía correctamente al backend.
+- [x] **Verificación de Backup**: Al entrar al editor, se comprueba en WordPress si el backup aún existe.
 
 ## 📋 Tareas Pendientes / Próximos Pasos
 - [ ] **Detección de Encabezados SEO**: Implementar advertencias si faltan H1 o si el orden de los encabezados no es óptimo.
@@ -45,7 +51,28 @@ Crear una herramienta local avanzada para editar sitios WordPress de forma intel
 
 ## 🕒 Registro de Sesiones (Log)
 
-### 2026-04-20 (Sesión Actual)
+### 2026-04-20 (Sesión Actual — Noche)
+**Correcciones de IA:**
+- ✅ Modelo Gemini actualizado: `gemini-pro` → `gemini-2.0-flash` → **`gemini-2.5-flash`** (modelo GA gratuito actual, abril 2026).
+- ✅ Prompts separados por tipo de bloque: los títulos ya no se convierten en párrafos largos.
+- ✅ Post-procesado: recorte automático si la IA devuelve más palabras de las permitidas.
+- ✅ Limpieza automática de comillas envolventes y preámbulos en respuestas de IA.
+
+**Nueva Funcionalidad — Prompt Personalizado:**
+- ✅ Añadido selector de modo: **📈 SEO Automático** / **✍️ Prompt Personalizado**.
+- ✅ Campo de texto libre para que el usuario escriba sus propias instrucciones a la IA.
+- ✅ Se guarda en `localStorage` junto con el resto de la configuración de IA.
+- ✅ El backend (`ai-rewrite.php`) usa el prompt del usuario cuando `mode=custom`.
+
+**Correcciones de Backup:**
+- ✅ **`wp-client.js`**: `updateContent()` ahora envía `skip_backup` al backend (antes lo ignoraba).
+- ✅ **Backup único**: Ya no se crea un backup nuevo en cada guardado. Solo el primero.
+- ✅ **Verificación de existencia**: Al entrar al editor, se verifica contra WordPress que el backup realmente existe. Si fue borrado, se limpia la caché y se bloquea la edición hasta crear uno nuevo.
+
+**Infraestructura:**
+- ✅ Cache bust: versiones de scripts actualizadas a `v=3.3`.
+
+### 2026-04-20 (Sesión Anterior — Mañana)
 **Correcciones Críticas:**
 - ✅ Corregido error de sintaxis en `api/proxy-preview.php` (JavaScript mal cerrado).
 - ✅ Eliminada función duplicada `handleBlockSearch` en `app.js`.

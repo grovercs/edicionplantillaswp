@@ -45,9 +45,8 @@ Solución: Implementar indicador de carga persistente (spinner) y
 desactivar botones de reescritura mientras se procesa la petición
 en api/ai-rewrite.php.
 
-Problema: Modelo Gemini descontinuado (gemini-2.0-flash HTTP 404).
-Solución: Actualizado a gemini-1.5-flash-latest que es el modelo gratuito actual.
-Verificar: https://ai.google.dev/gemini-api/docs/models/gemini
+Problema: Modelos Gemini obsoletos o descontinuados.
+Solución: Actualizado a gemini-2.5-flash (v1 GA Abril 2026).
 
 ------------------------------------------------------------------------
 💡 CONSEJOS PARA FUTUROS CAMBIOS
@@ -63,7 +62,6 @@ Verificar: https://ai.google.dev/gemini-api/docs/models/gemini
   revisar la función 'stripHtml' y la normalización de strings en app.js.
 - Al añadir un nuevo builder, crear primero su parser en assets/js/parsers/.
 - Los backups persisten durante la sesión del navegador (sessionStorage).
-  Si cierras el navegador, deberás crear el backup de nuevo.
 
 ------------------------------------------------------------------------
 🐛 CORRECCIONES REALIZADAS (2026-04-20)
@@ -77,17 +75,32 @@ Verificar: https://ai.google.dev/gemini-api/docs/models/gemini
 7. Añadido resaltado persistente al seleccionar bloques desde el preview
 8. Persistencia de backupId en sessionStorage para mantener estado al navegar
 9. Compatibilidad PHP mejorada (eliminados type hints para versiones antiguas)
-10. Modelo Gemini actualizado: gemini-2.0-flash → gemini-1.5-flash-latest (descontinuado)
+10. Modelo Gemini actualizado: gemini-2.5-flash (v1 GA Abril 2026)
+11. Solucionado bucle de backups: wp-client.js ya envía skip_backup correctamente
+12. Verificación de backups: El sistema comprueba si el backup existe en WP al entrar
+13. IA Inteligente: Prompts específicos por bloque (heading/button/text)
+14. Modo Custom: Posibilidad de escribir prompts personalizados para la IA
 
 ------------------------------------------------------------------------
-🔒 REGLA DE SEGURIDAD: BACKUP OBLIGATORIO
+🤖 NOTAS SOBRE LA IA (v1.5)
 ------------------------------------------------------------------------
-- La edición está BLOQUEADA hasta que se cree un backup
-- Los textarea aparecen deshabilitados con fondo rojo
-- El banner superior muestra "EDICIÓN BLOQUEADA" en rojo pulsante
-- Solo se requiere UN backup por página, no uno por edición
-- Esto protege la plantilla original de cambios accidentales
+- El modelo actual es 'gemini-2.5-flash'. 
+- El sistema detecta automáticamente el tipo de bloque (heading, button, text)
+- MODO SEO: 
+  - HEADINGS: Se fuerza a ser cortos (max palabras original + 2).
+  - BUTTONS: Se fuerza a 2-5 palabras.
+- MODO CUSTOM: Si el usuario escribe su propio prompt, este anula al SEO.
+- POST-PROCESADO: El servidor PHP recorta el texto si la IA devuelve más de la cuenta.
+
+------------------------------------------------------------------------
+🛡️ GESTIÓN DE SEGURIDAD Y BACKUPS
+------------------------------------------------------------------------
+- REGLA DE ORO: Solo se crea UN backup la primera vez que se guarda.
+- Si borras el backup en WordPress, la app lo detectará al volver a entrar
+  a esa página y te pedirá crear uno nuevo (Banner ⚠️).
+- Se usa sessionStorage para cachear IDs, pero siempre se valida contra la API.
+- La edición está BLOQUEADA hasta que se cree un backup válido.
 
 ========================================================================
-Última actualización: 2026-04-20
+Última actualización: 2026-04-20 (Sesión Noche)
 ========================================================================

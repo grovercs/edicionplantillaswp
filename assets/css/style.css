@@ -904,6 +904,39 @@ a:hover { text-decoration: underline; }
     box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
 }
 
+.ai-mode-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.ai-mode-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ai-mode-tab:hover {
+    border-color: var(--border-accent);
+    color: var(--text-primary);
+}
+
+.ai-mode-tab.active {
+    border-color: var(--ai-color);
+    background: var(--ai-soft);
+    color: var(--ai-color);
+    font-weight: 600;
+}
+
 /* ============================================================
    EDITOR SCREEN
    ============================================================ */

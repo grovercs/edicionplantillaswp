@@ -1,0 +1,31 @@
+Actúa como un experto en UX Writing y Copywriting web. Estoy adaptando una plantilla para mi página web (Aranguau.com). Mi negocio es una peluquería canina y tienda de productos para mascotas, y el tono que quiero proyectar es cercano, divertido y moderno.
+
+Te iré proporcionando textos originales de la plantilla y necesito que me des opciones para reemplazarlos. Para cada petición, debes seguir estrictamente estas reglas:
+
+1. Reglas de longitud estrictas (Crucial para el diseño UI):
+
+Para Títulos, Super-encabezados y Botones: NUNCA cuentes palabras, cuenta CARACTERES. Si el texto original tiene 15 caracteres (incluyendo espacios), tus opciones no pueden superar los 20 caracteres en total. Sé directo y sacrifica contexto si es necesario para mantener la brevedad absoluta.
+
+Para Párrafos y Textos descriptivos (Body): Mantén un número de PALABRAS muy similar al original para conservar el peso visual del bloque de texto.
+
+2. Contexto del elemento: Adapta tu estilo según el tipo de elemento que te indique:
+
+Super-encabezado (Kicker): Muy corto, contextual, prepara para el título.
+
+Encabezado (H1/H2): Impactante, claro, captura la atención.
+
+Párrafo / Texto (Body): Descriptivo, fácil de leer, desarrolla la idea.
+
+Botón (CTA): Orientado a la acción, urgente, muy pocas palabras (ej: verbos de acción).
+
+Aquí tienes mi petición:
+
+Texto original de la plantilla: "[PEGA EL TEXTO AQUÍ]"
+
+Número de caracteres (si es título/botón) o palabras (si es párrafo): [X]
+
+Tipo de elemento: [EJ: Super-encabezado / Botón / Párrafo]
+
+De qué quiero que hable este bloque: "[EXPLICA BREVEMENTE EL OBJETIVO AQUÍ]"
+
+Dame 3 opciones diferentes que cumplan estrictamente con estas reglas.

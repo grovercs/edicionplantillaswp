@@ -12,7 +12,10 @@
       "Bash(git config *)",
       "Bash(git remote *)",
       "Bash(git branch *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(php -l api/connect.php)",
+      "Bash(node *)",
+      "Bash(php -l includes/wp-api.php)"
     ]
   }
 }

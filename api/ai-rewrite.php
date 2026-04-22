@@ -20,42 +20,99 @@ if (!$input || empty($input['text']) || empty($input['provider']) || empty($inpu
 $text      = $input['text'];
 $provider  = $input['provider'];
 $apiKey    = $input['api_key'];
+$blockType = $input['block_type'] ?? 'text';
+$mode      = $input['mode'] ?? 'seo';
+$customPrm = $input['custom_prompt'] ?? '';
 $siteName  = $input['site_name'] ?? 'Mi sitio web';
 $pageTitle = $input['page_title'] ?? '';
 $language  = $input['language'] ?? 'es';
 $extraCtx  = $input['extra_context'] ?? '';
 
+// Contar palabras del texto original (sin HTML)
+$plainText = strip_tags($text);
+$wordCount = str_word_count($plainText, 0, 'áéíóúñÁÉÍÓÚÑüÜ');
+
 // ====================================================================
-// PROMPT SEO ON-PAGE CON TOQUE HUMANO
+// MODO CUSTOM: El usuario escribe su propio prompt
 // ====================================================================
-$prompt = <<<PROMPT
-Eres un copywriter profesional especializado en SEO on-page y escritura persuasiva web. Tu trabajo es reescribir textos de páginas web para que sean más efectivos, naturales y optimizados.
+if ($mode === 'custom' && !empty($customPrm)) {
+    $prompt = <<<PROMPT
+{$customPrm}
 
-INSTRUCCIONES ESTRICTAS:
-1. MANTÉN el mismo significado, propósito e intención del texto original
-2. Usa un tono NATURAL, cercano y humano — como si hablara una persona real, no una máquina
-3. Aplica buenas prácticas de SEO on-page:
-   - Integra palabras clave relevantes de forma orgánica
-   - Usa variaciones semánticas (sinónimos, LSI keywords)
-   - Estructura con claridad para la lectura web (frases cortas, ritmo variado)
-4. Haz el texto PERSUASIVO: genera confianza, empatía y motivación a la acción
-5. Mantén aproximadamente la misma longitud (±25%)
-6. Si el texto contiene HTML (<p>, <strong>, <em>, <br>, listas, etc.), CONSERVA la estructura HTML
-7. Escribe en {$language}
-8. NUNCA uses frases genéricas como "en el mundo de", "sin duda alguna", "bienvenidos a nuestra web", "en la actualidad", "somos líderes"
-9. Varía la estructura de las frases: alterna cortas y largas para un ritmo natural
-10. Incluye al menos un elemento de conexión emocional con el lector
-
-CONTEXTO DEL SITIO:
-- Nombre del sitio: {$siteName}
-- Página: {$pageTitle}
-{$extraCtx}
-
-TEXTO ORIGINAL A REESCRIBIR:
+TEXTO ORIGINAL:
 {$text}
 
-IMPORTANTE: Responde ÚNICAMENTE con el texto reescrito. Sin explicaciones, sin comillas envolventes, sin preámbulos, sin "Aquí tienes el texto:". Solo el texto final.
+Responde ÚNICAMENTE con el resultado. Sin explicaciones, sin comillas envolventes, sin preámbulos.
 PROMPT;
+
+} else {
+    // ====================================================================
+    // MODO SEO: Prompts automáticos según tipo de bloque
+    // ====================================================================
+    switch ($blockType) {
+        case 'heading':
+            $prompt = <<<PROMPT
+Reescribe este TÍTULO WEB en {$language}. El original tiene {$wordCount} palabras.
+
+REGLAS OBLIGATORIAS:
+- Tu respuesta debe tener MÁXIMO {$wordCount} palabras (igual o menos que el original)
+- Es un título H2/H3, NO un párrafo. Mantén la brevedad
+- Hazlo directo, con gancho y optimizado para SEO
+- Sin punto final, sin comillas, sin explicaciones
+- Tono natural y profesional
+
+Sitio: {$siteName} | Página: {$pageTitle}
+{$extraCtx}
+
+Título original:
+{$text}
+
+Responde SOLO con el nuevo título. Nada más.
+PROMPT;
+            break;
+
+        case 'button':
+            $prompt = <<<PROMPT
+Reescribe este TEXTO DE BOTÓN web en {$language}. El original tiene {$wordCount} palabras.
+
+REGLAS OBLIGATORIAS:
+- Tu respuesta debe tener entre 2 y 4 palabras MÁXIMO
+- Es un botón CTA. Debe ser corto, claro y orientado a la acción
+- Sin punto final, sin comillas, sin explicaciones
+
+Sitio: {$siteName} | Página: {$pageTitle}
+
+Texto del botón original:
+{$text}
+
+Responde SOLO con el nuevo texto del botón. Nada más.
+PROMPT;
+            break;
+
+        default: // 'text'
+            $prompt = <<<PROMPT
+Eres un copywriter SEO profesional. Reescribe este PÁRRAFO de página web en {$language}.
+
+INSTRUCCIONES:
+1. MANTÉN el mismo significado e intención del texto original
+2. Mantén una longitud similar al original ({$wordCount} palabras aprox., ±25%)
+3. Tono NATURAL y humano, no robótico
+4. Integra palabras clave relevantes de forma orgánica (sinónimos, LSI)
+5. Si hay HTML (<p>, <strong>, <em>, <br>, listas), CONSERVA la estructura HTML
+6. NUNCA uses frases genéricas ("en el mundo de", "sin duda alguna", "somos líderes")
+7. Haz el texto persuasivo: genera confianza y motivación a la acción
+
+Sitio: {$siteName} | Página: {$pageTitle}
+{$extraCtx}
+
+Texto original:
+{$text}
+
+Responde ÚNICAMENTE con el texto reescrito. Sin explicaciones, sin comillas, sin preámbulos.
+PROMPT;
+            break;
+    }
+}
 
 try {
     switch ($provider) {
@@ -73,6 +130,37 @@ try {
             exit;
     }
 
+    // ================================================================
+    // POST-PROCESADO: limpiar y forzar límites según tipo de bloque
+    // ================================================================
+    
+    // Limpiar comillas envolventes que a veces añade el modelo
+    $result = preg_replace('/^["\'""«»]+|["\'""«»]+$/u', '', trim($result));
+    
+    // Eliminar preámbulos tipo "Aquí tienes:" o "Nuevo título:"
+    $result = preg_replace('/^(Aquí tienes[^:]*:|Nuevo (título|texto|botón)[^:]*:|Reescritura[^:]*:)\s*/iu', '', $result);
+    
+    if ($blockType === 'heading') {
+        // Quitar punto final en títulos
+        $result = rtrim($result, '.');
+        
+        // Si la IA devolvió más palabras que el original + 2, recortar
+        $resultWords = preg_split('/\s+/', trim($result));
+        $maxWords = $wordCount + 2;
+        if (count($resultWords) > $maxWords) {
+            $result = implode(' ', array_slice($resultWords, 0, $maxWords));
+        }
+    }
+    
+    if ($blockType === 'button') {
+        // Botones: máximo 5 palabras
+        $resultWords = preg_split('/\s+/', trim($result));
+        if (count($resultWords) > 5) {
+            $result = implode(' ', array_slice($resultWords, 0, 4));
+        }
+        $result = rtrim($result, '.');
+    }
+
     echo json_encode(['success' => true, 'data' => ['rewritten' => $result]]);
 
 } catch (Exception $e) {
@@ -84,8 +172,8 @@ try {
 // ====================================================================
 
 function callGemini(string $apiKey, string $prompt): string {
-    // Modelo: gemini-pro (modelo gratuito estable y compatible)
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={$apiKey}";
+    // Modelo: gemini-2.5-flash (modelo gratuito estable GA - abril 2026)
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
 
     $data = [
         'contents' => [
