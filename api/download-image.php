@@ -4,7 +4,7 @@
  * Esto evita problemas de CORS y asegura que la imagen se descargue correctamente
  */
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+require_once __DIR__ . '/../includes/cors.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 

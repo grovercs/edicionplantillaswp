@@ -3,7 +3,7 @@
  * API Endpoint: Conectar con WordPress y verificar credenciales
  */
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+require_once __DIR__ . '/../includes/cors.php';
 
 require_once __DIR__ . '/../includes/wp-api.php';
 

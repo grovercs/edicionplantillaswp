@@ -5,8 +5,7 @@
  * Incluye prompt SEO on-page optimizado con toque humano
  */
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Content-Type');
+require_once __DIR__ . '/../includes/cors.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 
